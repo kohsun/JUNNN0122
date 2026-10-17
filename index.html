@@ -29,7 +29,7 @@ input[type=number]:focus,.atm input:focus{outline:2px solid var(--accent);border
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .slider{display:flex;align-items:center;gap:8px;font-size:14px;flex:1;min-width:200px}
 .slider input{flex:1}
-button,label.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--btn);color:var(--btntext);font-size:14px;font-weight:600;cursor:pointer}
+button,label.btn{display:inline-block;box-sizing:border-box;padding:10px 14px;border-radius:10px;border:0;background:var(--btn);color:var(--btntext);font-family:inherit;font-size:14px;font-weight:600;line-height:1.3;text-align:center;text-shadow:none;cursor:pointer}
 input[type=file]{display:none}
 .card,.total,.atm{text-shadow:0 0 3px var(--cardbase),0 0 6px var(--cardbase)}
 .atm{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;font-weight:700;font-size:18px}
@@ -75,10 +75,6 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 <button id="csave">🧾 結帳</button>
 <div class="sync" id="sync">連線中…</div>
 <div id="slist"></div>
-</div>
-<div class="card rec">
-<button id="save">📌 紀錄</button>
-<div id="list"></div>
 </div>
 <div class="card panel">
 <div class="row">
@@ -141,34 +137,6 @@ function num(v){return parseFloat(String(v).replace(/,/g,""))||0;}
   });
 });
 var cur={a:0,b:0,g:0};
-var recs=[];
-try{recs=JSON.parse(localStorage.getItem("recs")||"[]")}catch(e){recs=[]}
-function saveRecs(){try{localStorage.setItem("recs",JSON.stringify(recs))}catch(e){}}
-function renderRecs(){
-  const el=document.getElementById("list");
-  el.innerHTML=recs.length?"":'<div class="hint" style="margin-top:8px">還沒有紀錄</div>';
-  recs.forEach((r,i)=>{
-    const d=document.createElement("div");d.className="item";
-    let det="";
-    if(r.c){det=DATA.map(([dn],k)=>{const [x,y,z]=r.c[k]||[0,0,0];return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（這筆沒有面額明細）</div>";
-    d.innerHTML=`<div class="main"><div class="when">${r.t} ▾</div><div class="hint">總金額 ${fmt(r.a)} + ATM 庫存 ${fmt(r.b)}</div>${r.r!==undefined?`<div class="hint">前日庫存 ${fmt(r.v||0)} + 共收 ${fmt(r.r)} + 共付 ${fmt(r.p)} = ${fmt(r.r+r.p+(r.v||0))}　${Math.abs(r.r+r.p+(r.v||0)-r.g)<0.005?"✓ 平衡":"✗ 不平衡"}</div>`:""}</div><b>${fmt(r.g)}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
-    el.appendChild(d);
-  });
-}
-document.getElementById("save").onclick=()=>{
-  const t=new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
-  const c=[...tbody.children].map(tr=>[...tr.querySelectorAll("input")].map(i=>parseFloat(i.value)||0));
-  const rv=num(document.getElementById("recv").value),pv=num(document.getElementById("paid").value);
-  recs.unshift({t:t,a:cur.a,b:cur.b,g:cur.g,c:c,r:rv,p:pv,v:num(document.getElementById("prev").value)});
-  saveRecs();renderRecs();
-};
-document.getElementById("list").addEventListener("click",e=>{
-  const x=e.target.closest(".x");
-  if(x){recs.splice(+x.dataset.i,1);saveRecs();renderRecs();return;}
-  const m=e.target.closest(".main");
-  if(m){const dt=m.parentElement.querySelector(".detail");dt.hidden=!dt.hidden;}
-});
-renderRecs();
 document.getElementById("reset").onclick=()=>{tbody.querySelectorAll("input").forEach(i=>i.value="");document.getElementById("atm").value="";document.getElementById("prev").value="";document.getElementById("recv").value="";document.getElementById("paid").value="";calc();};
 calc();
 
@@ -210,7 +178,7 @@ function renderSrec(){
     let det="";
     if(c){det=DATA.map(([dn],k)=>{const q=Array.isArray(c[k])?c[k]:[0,0,0];const x=N(q[0]),y=N(q[1]),z=N(q[2]);return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（沒有面額明細）</div>";
     const df=Math.round((N(r.g)-(N(r.v)+N(r.r)+N(r.p)))*100)/100;const bal=Math.abs(df)<0.005;
-    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} + 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)+N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-id="${esc(r.id)}">✕</button><div class="detail" hidden>${det}</div>`;
+    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} + 共付 ${fmt(N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-id="${esc(r.id)}">✕</button><div class="detail" hidden><div>總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))}</div>${det}</div>`;
     el.appendChild(d);
   });
 }
@@ -234,7 +202,7 @@ document.getElementById("csave").onclick=async()=>{
   const g=cur.g;
   btn.disabled=true;
   try{
-    await sdb.collection("checkouts").add({ts:Date.now(),t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,d:Math.round((g-(prev+rv+pv))*100)/100,c:c});
+    await sdb.collection("checkouts").add({ts:Date.now(),t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,c:c});
     setSync("已同步：所有開啟此連結的人都看得到這些紀錄");
   }catch(err){
     setSync(err&&err.code==="invalid_argument"?"你的權限只能檢視，無法新增紀錄":"儲存失敗，請稍後再試",true);
