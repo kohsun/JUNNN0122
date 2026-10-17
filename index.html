@@ -19,8 +19,8 @@ th{color:var(--muted);font-weight:600;font-size:13px}
 th:first-child,td:first-child{text-align:center;font-weight:700}
 td:first-child{font-size:22px}
 tr:last-child td{border-bottom:0}
-input[type=number]{width:100%;min-width:0;box-sizing:border-box;padding:8px 4px;font-size:16px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--inbg);color:var(--text)}
-input[type=number]:focus{outline:2px solid var(--accent);border-color:transparent}
+input[type=number],.atm input{width:100%;min-width:0;box-sizing:border-box;padding:8px 4px;font-size:16px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--inbg);color:var(--text)}
+input[type=number]:focus,.atm input:focus{outline:2px solid var(--accent);border-color:transparent}
 .hint{font-size:11px;color:var(--muted);margin-top:2px}
 .sub{font-weight:600}
 .total{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:16px 20px;background:color-mix(in srgb,#fff0a0 calc(min(100,var(--op) + 35)*1%),transparent);color:#3a3000;border:1px solid rgba(200,170,40,.5);border-radius:14px;font-size:18px;font-weight:700}
@@ -62,11 +62,12 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 </table>
 </div>
 <div class="card atm"><span>總金額</span><b id="total">0</b></div>
-<div class="card atm"><span>ATM 庫存</span><input id="atm" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+<div class="card atm"><span>ATM 庫存</span><input id="atm" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="total grand" id="gbox"><span>合計</span><b id="grand">0</b></div>
-<div class="card atm"><span>共收</span><input id="recv" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-<div class="card atm"><span>共付</span><input id="paid" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+<div class="card atm"><span>共收</span><input id="recv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm"><span>共付</span><input id="paid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="total grand" id="chk"><span>合計</span><b id="chkv">0</b></div>
+<div class="total"><span>差額 <small id="dnote" style="font-weight:400;font-size:13px"></small></span><b id="diff">0</b></div>
 <div class="card rec">
 <button id="save">📌 紀錄</button>
 <div id="list"></div>
@@ -101,14 +102,16 @@ function calc(){
     total+=s;
   });
   document.getElementById("total").textContent=fmt(total);
-  const b=parseFloat(document.getElementById("atm").value)||0;
+  const b=num(document.getElementById("atm").value);
   document.getElementById("grand").textContent=fmt(total+b);
   cur={a:total,b:b,g:total+b};
   const rEl=document.getElementById("recv"),pEl=document.getElementById("paid"),chk=document.getElementById("chk");
-  const s=(parseFloat(rEl.value)||0)+(parseFloat(pEl.value)||0);
+  const s=num(rEl.value)+num(pEl.value);
   const empty=rEl.value===""&&pEl.value==="";
   const same=Math.abs(s-(total+b))<0.005;
   document.getElementById("chkv").textContent=fmt(s);
+  document.getElementById("diff").textContent=(empty||same)?"0":fmt(Math.round((total+b-s)*100)/100);
+  document.getElementById("dnote").textContent=(empty||same)?"":(s>total+b?"（下方合計較多）":"（上方合計較多）");
   chk.classList.toggle("bad",!empty&&!same&&s>total+b);
   document.getElementById("gbox").classList.toggle("bad",!empty&&!same&&total+b>s);
   chk.classList.toggle("ok",!empty&&same);
@@ -118,6 +121,15 @@ tbody.addEventListener("input",calc);
 document.getElementById("atm").addEventListener("input",calc);
 document.getElementById("recv").addEventListener("input",calc);
 document.getElementById("paid").addEventListener("input",calc);
+function num(v){return parseFloat(String(v).replace(/,/g,""))||0;}
+["atm","recv","paid"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener("input",()=>{
+    const raw=el.value.replace(/[^0-9.]/g,"");
+    const p=raw.split("."),ip=p[0],dp=p[1];
+    el.value=(ip?Number(ip).toLocaleString("en-US"):(dp!==undefined?"0":""))+(dp!==undefined?"."+dp.slice(0,2):"");
+  });
+});
 var cur={a:0,b:0,g:0};
 var recs=[];
 try{recs=JSON.parse(localStorage.getItem("recs")||"[]")}catch(e){recs=[]}
@@ -136,7 +148,7 @@ function renderRecs(){
 document.getElementById("save").onclick=()=>{
   const t=new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
   const c=[...tbody.children].map(tr=>[...tr.querySelectorAll("input")].map(i=>parseFloat(i.value)||0));
-  const rv=parseFloat(document.getElementById("recv").value)||0,pv=parseFloat(document.getElementById("paid").value)||0;
+  const rv=num(document.getElementById("recv").value),pv=num(document.getElementById("paid").value);
   recs.unshift({t:t,a:cur.a,b:cur.b,g:cur.g,c:c,r:rv,p:pv});
   saveRecs();renderRecs();
 };
