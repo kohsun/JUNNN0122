@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>點鈔計算機</title>
 <style>
-:root{--bg:#eef1f5;--cardbase:#ffffff;--text:#1c1f24;--muted:#5f6672;--line:rgba(120,130,145,.35);--accent:#2563eb;--inbg:rgba(255,255,255,.75);--btn:#1c1f24;--btntext:#fff;--op:55;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+:root{--bg:#eef1f5;--cardbase:#ffffff;--text:#1c1f24;--muted:#5f6672;--line:rgba(120,130,145,.35);--accent:#2563eb;--inbg:rgba(255,255,255,.75);--btn:#1c1f24;--btntext:#fff;--op:30;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--cardbase:#1d2026;--text:#eceef1;--muted:#b0b6c1;--accent:#6ea0ff;--inbg:rgba(20,22,26,.7);--btn:#eceef1;--btntext:#14161a;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#14161a;--cardbase:#1d2026;--text:#eceef1;--muted:#b0b6c1;--accent:#6ea0ff;--inbg:rgba(20,22,26,.7);--btn:#eceef1;--btntext:#14161a;color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;padding:16px;background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat}
 .wrap{max-width:720px;margin:0 auto}
 h1{font-size:22px;margin:6px 0 12px}
-.card{background:color-mix(in srgb,var(--cardbase) calc(var(--op)*1%),transparent);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid var(--line);border-radius:14px;padding:8px 12px;overflow-x:auto}
+.card{background:color-mix(in srgb,var(--cardbase) calc(var(--op)*1%),transparent);border:1px solid var(--line);border-radius:14px;padding:8px 12px;overflow-x:auto}
 table{width:100%;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
 th,td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{color:var(--muted);font-weight:600;font-size:13px}
@@ -22,7 +22,7 @@ input[type=number]{width:100%;min-width:0;box-sizing:border-box;padding:8px 4px;
 input[type=number]:focus{outline:2px solid var(--accent);border-color:transparent}
 .hint{font-size:11px;color:var(--muted);margin-top:2px}
 .sub{font-weight:600}
-.total{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:16px 20px;background:color-mix(in srgb,#fff0a0 calc(min(100,var(--op) + 35)*1%),transparent);color:#3a3000;border:1px solid rgba(200,170,40,.5);border-radius:14px;font-size:18px;font-weight:700;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.total{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:16px 20px;background:color-mix(in srgb,#fff0a0 calc(min(100,var(--op) + 35)*1%),transparent);color:#3a3000;border:1px solid rgba(200,170,40,.5);border-radius:14px;font-size:18px;font-weight:700}
 .total b{font-size:30px;font-variant-numeric:tabular-nums}
 .panel{margin-top:12px;padding:10px 12px;display:flex;flex-direction:column;gap:10px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -30,6 +30,20 @@ input[type=number]:focus{outline:2px solid var(--accent);border-color:transparen
 .slider input{flex:1}
 button,label.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--btn);color:var(--btntext);font-size:14px;font-weight:600;cursor:pointer}
 input[type=file]{display:none}
+.card,.total,.atm{text-shadow:0 0 3px var(--cardbase),0 0 6px var(--cardbase)}
+.atm{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;font-weight:700;font-size:18px}
+.atm input{max-width:180px;font-size:18px;text-shadow:none}
+.grand{font-size:20px}
+.rec{margin-top:14px}
+.rec #save{width:100%}
+.rec .item{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
+.rec .item>div{flex:1}
+.rec .item b{font-size:18px;font-variant-numeric:tabular-nums}
+.rec .when{font-weight:600;font-size:14px}
+.rec .item{flex-wrap:wrap}
+.rec .main{cursor:pointer}
+.rec .item>.detail{flex:0 0 100%;font-size:13px;line-height:1.7;padding:6px 10px;background:var(--inbg);border-radius:8px}
+.rec .x{padding:4px 8px;font-size:12px}
 th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:20%}th:nth-child(5){width:22%}
 @media (max-width:480px){body{padding:10px}.card{padding:6px 6px}th,td{padding:6px 2px}.hint{font-size:10px}.sub{font-size:12px}td:first-child{font-size:14px}.total{padding:14px}.total b{font-size:24px}}
 </style>
@@ -37,20 +51,26 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 <body>
 <div class="wrap">
 <h1>點鈔計算機</h1>
-<div class="card">
+<div class="card" id="tbl">
 <table>
 <thead><tr><th>面額</th><th>捆</th><th>紮</th><th>散</th><th>小計</th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </div>
 <div class="total"><span>總金額</span><b id="total">0</b></div>
+<div class="card atm"><span>ATM 庫存</span><input id="atm" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+<div class="total grand"><span>合計</span><b id="grand">0</b></div>
+<div class="card rec">
+<button id="save">📌 紀錄</button>
+<div id="list"></div>
+</div>
 <div class="card panel">
 <div class="row">
 <label class="btn">🖼 選擇背景圖<input id="file" type="file" accept="image/*"></label>
 <button id="rmbg">移除背景圖</button>
 <button id="reset">全部清除</button>
 </div>
-<label class="slider">卡片透明度 <input id="op" type="range" min="0" max="100" value="55"> <span id="opv">55%</span></label>
+<label class="slider">卡片透明度 <input id="op" type="range" min="0" max="100" value="30"> <span id="opv">30%</span></label>
 </div>
 </div>
 <script>
@@ -74,9 +94,41 @@ function calc(){
     total+=s;
   });
   document.getElementById("total").textContent=fmt(total);
+  const b=parseFloat(document.getElementById("atm").value)||0;
+  document.getElementById("grand").textContent=fmt(total+b);
+  cur={a:total,b:b,g:total+b};
 }
 tbody.addEventListener("input",calc);
-document.getElementById("reset").onclick=()=>{tbody.querySelectorAll("input").forEach(i=>i.value="");calc();};
+document.getElementById("atm").addEventListener("input",calc);
+var cur={a:0,b:0,g:0};
+var recs=[];
+try{recs=JSON.parse(localStorage.getItem("recs")||"[]")}catch(e){recs=[]}
+function saveRecs(){try{localStorage.setItem("recs",JSON.stringify(recs))}catch(e){}}
+function renderRecs(){
+  const el=document.getElementById("list");
+  el.innerHTML=recs.length?"":'<div class="hint" style="margin-top:8px">還沒有紀錄</div>';
+  recs.forEach((r,i)=>{
+    const d=document.createElement("div");d.className="item";
+    let det="";
+    if(r.c){det=DATA.map(([dn],k)=>{const [x,y,z]=r.c[k]||[0,0,0];return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（這筆沒有面額明細）</div>";
+    d.innerHTML=`<div class="main"><div class="when">${r.t} ▾</div><div class="hint">總金額 ${fmt(r.a)} + ATM 庫存 ${fmt(r.b)}</div></div><b>${fmt(r.g)}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
+    el.appendChild(d);
+  });
+}
+document.getElementById("save").onclick=()=>{
+  const t=new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+  const c=[...tbody.children].map(tr=>[...tr.querySelectorAll("input")].map(i=>parseFloat(i.value)||0));
+  recs.unshift({t:t,a:cur.a,b:cur.b,g:cur.g,c:c});
+  saveRecs();renderRecs();
+};
+document.getElementById("list").addEventListener("click",e=>{
+  const x=e.target.closest(".x");
+  if(x){recs.splice(+x.dataset.i,1);saveRecs();renderRecs();return;}
+  const m=e.target.closest(".main");
+  if(m){const dt=m.parentElement.querySelector(".detail");dt.hidden=!dt.hidden;}
+});
+renderRecs();
+document.getElementById("reset").onclick=()=>{tbody.querySelectorAll("input").forEach(i=>i.value="");document.getElementById("atm").value="";calc();};
 calc();
 
 // 透明度（數字越小越透明，背景圖越清楚）
