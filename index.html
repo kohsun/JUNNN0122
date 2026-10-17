@@ -40,7 +40,6 @@ input[type=file]{display:none}
 .total.bad{background:color-mix(in srgb,#ff8f8f calc(min(100,var(--op) + 35)*1%),transparent);color:#4a0b0b;border-color:rgba(200,60,60,.55)}
 .rec{margin-top:14px}
 .rec #save,.rec #csave{width:100%}
-.sync{font-size:12px;color:var(--muted);margin:8px 2px 0}.sync.off{color:#c0392b}
 .rec .item{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
 .rec .item>div{flex:1}
 .rec .item b{font-size:18px;font-variant-numeric:tabular-nums}
@@ -73,7 +72,6 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 <div class="card rec">
 <div class="when" style="margin-bottom:8px">結帳紀錄</div>
 <button id="csave">🧾 結帳</button>
-<div class="sync" id="sync">連線中…</div>
 <div id="slist"></div>
 </div>
 <div class="card panel">
@@ -164,65 +162,42 @@ document.getElementById("file").addEventListener("change",e=>{
 });
 document.getElementById("rmbg").onclick=()=>{document.body.style.backgroundImage="";try{localStorage.removeItem("bg")}catch(e){}};
 
-// ===== 結帳紀錄（所有開啟此連結的人共用）=====
-var srec=[],sdb=null,canW=true;
+// ===== 結帳紀錄（只存在你自己的瀏覽器）=====
+var srec=[];
+try{srec=JSON.parse(localStorage.getItem("srecs")||"[]")}catch(e){srec=[]}
+function saveSrec(){try{localStorage.setItem("srecs",JSON.stringify(srec))}catch(e){}}
 function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function N(v){return Number(v)||0;}
-function setSync(msg,off){const e=document.getElementById("sync");e.textContent=msg;e.classList.toggle("off",!!off);}
 function renderSrec(){
   const el=document.getElementById("slist");
   el.innerHTML=srec.length?"":'<div class="hint" style="margin-top:8px">還沒有結帳紀錄</div>';
-  srec.forEach(r=>{
+  srec.forEach((r,i)=>{
     const d=document.createElement("div");d.className="item";
     const c=Array.isArray(r.c)?r.c:null;
     let det="";
     if(c){det=DATA.map(([dn],k)=>{const q=Array.isArray(c[k])?c[k]:[0,0,0];const x=N(q[0]),y=N(q[1]),z=N(q[2]);return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（沒有面額明細）</div>";
     const df=Math.round((N(r.g)-(N(r.v)+N(r.r)+N(r.p)))*100)/100;const bal=Math.abs(df)<0.005;
-    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} + 共付 ${fmt(N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-id="${esc(r.id)}">✕</button><div class="detail" hidden><div>總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))}</div>${det}</div>`;
+    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} + 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)+N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
     el.appendChild(d);
   });
 }
 document.getElementById("slist").addEventListener("click",e=>{
   const x=e.target.closest(".x");
   if(x){
-    if(!sdb)return;
     if(x.dataset.sure!=="1"){x.dataset.sure="1";x.textContent="確定刪除?";setTimeout(()=>{x.dataset.sure="";x.textContent="✕";},3000);return;}
-    sdb.doc("checkouts/"+x.dataset.id).delete().catch(()=>setSync("刪除失敗，可能沒有編輯權限",true));
-    return;
+    srec.splice(+x.dataset.i,1);saveSrec();renderSrec();return;
   }
   const m=e.target.closest(".main");
   if(m){const dt=m.parentElement.querySelector(".detail");dt.hidden=!dt.hidden;}
 });
-document.getElementById("csave").onclick=async()=>{
-  if(!sdb||!canW){setSync(sdb?"你的權限只能檢視，無法新增紀錄":"目前無法同步，無法新增紀錄",true);return;}
-  const btn=document.getElementById("csave");
+document.getElementById("csave").onclick=()=>{
   const t=new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
   const c=[...tbody.children].map(tr=>[...tr.querySelectorAll("input")].map(i=>parseFloat(i.value)||0));
   const rv=num(document.getElementById("recv").value),pv=num(document.getElementById("paid").value),prev=num(document.getElementById("prev").value);
   const g=cur.g;
-  btn.disabled=true;
-  try{
-    await sdb.collection("checkouts").add({ts:Date.now(),t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,c:c});
-    setSync("已同步：所有開啟此連結的人都看得到這些紀錄");
-  }catch(err){
-    setSync(err&&err.code==="invalid_argument"?"你的權限只能檢視，無法新增紀錄":"儲存失敗，請稍後再試",true);
-  }
-  btn.disabled=false;
+  srec.unshift({t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,c:c});
+  saveSrec();renderSrec();
 };
-(async()=>{
-  try{
-    const cl=window.claude;
-    if(!cl||!cl.use){setSync("未同步：此頁面不是從分享連結開啟，紀錄無法共用",true);return;}
-    const u=await cl.use("user");
-    sdb=await cl.use("db");
-    if(!sdb){setSync("未同步：請先登入 Claude 再開啟此連結",true);return;}
-    try{if(u&&u.can){const w=await u.can("data.write");if(w===false)canW=false;}}catch(e){}
-    setSync(canW?"已同步：所有開啟此連結的人都看得到這些紀錄":"已同步（唯讀）：你可以看到紀錄，但無法新增");
-    sdb.collection("checkouts").orderBy("ts","desc").limit(200).onSnapshot(
-      snap=>{srec=snap.docs.map(d=>Object.assign({id:d.id},d.data()));renderSrec();},
-      ()=>setSync("同步中斷，請重新整理頁面",true));
-  }catch(e){setSync("未同步：無法連線",true);}
-})();
 renderSrec();
 </script>
 </body>
