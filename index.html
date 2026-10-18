@@ -106,7 +106,7 @@ function calc(){
   cur={a:total,b:b,g:total+b};
   const rEl=document.getElementById("recv"),pEl=document.getElementById("paid"),chk=document.getElementById("chk");
   const vEl=document.getElementById("prev");
-  const s=num(vEl.value)+num(rEl.value)+num(pEl.value);
+  const s=num(vEl.value)+num(rEl.value)-num(pEl.value);
   const empty=vEl.value===""&&rEl.value===""&&pEl.value==="";
   const same=Math.abs(s-(total+b))<0.005;
   document.getElementById("chkv").textContent=fmt(s);
@@ -173,8 +173,8 @@ function renderSrec(){
     const c=Array.isArray(r.c)?r.c:null;
     let det="";
     if(c){det=DATA.map(([dn],k)=>{const q=Array.isArray(c[k])?c[k]:[0,0,0];const x=N(q[0]),y=N(q[1]),z=N(q[2]);return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（沒有面額明細）</div>";
-    const df=Math.round((N(r.g)-(N(r.v)+N(r.r)+N(r.p)))*100)/100;const bal=Math.abs(df)<0.005;
-    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} + 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)+N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
+    const df=Math.round((N(r.g)-(N(r.v)+N(r.r)-N(r.p)))*100)/100;const bal=Math.abs(df)<0.005;
+    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} - 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)-N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
     el.appendChild(d);
   });
 }
