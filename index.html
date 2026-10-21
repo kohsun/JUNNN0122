@@ -31,6 +31,7 @@ button,label.btn{display:inline-block;box-sizing:border-box;padding:10px 14px;bo
 input[type=file]{display:none}
 .atm{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;font-weight:800;font-size:22px}
 .atm input{max-width:190px;font-size:22px;font-weight:800;text-align:right}
+.atm.purple{background:color-mix(in srgb,#dccbff calc(min(100,var(--op) + 35)*1%),transparent);color:#2a1650;border-color:rgba(130,90,200,.55)}
 .grand{font-size:20px}
 .atm b{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
 .total.ok{background:color-mix(in srgb,#5fd49a calc(min(100,var(--op) + 35)*1%),transparent);color:#06391f;border-color:rgba(20,130,75,.55)}
@@ -61,9 +62,14 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 <div class="card atm"><span>總金額</span><b id="total">0</b></div>
 <div class="card atm"><span>ATM 庫存</span><input id="atm" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="total grand" id="gbox"><span>合計</span><b id="grand">0</b></div>
-<div class="card atm"><span>前日庫存</span><input id="prev" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
-<div class="card atm"><span>共收</span><input id="recv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
-<div class="card atm"><span>共付</span><input id="paid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm purple"><span>前日庫存</span><input id="prev" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm"><span>票據</span><input id="bill" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm"><span>ATM 收</span><input id="arecv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm"><span>當日櫃檯收</span><input id="crecv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm purple"><span>共收</span><b id="recv">0</b></div>
+<div class="card atm"><span>ATM 付</span><input id="apaid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm"><span>當日櫃檯付</span><input id="cpaid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm purple"><span>共付</span><b id="paid">0</b></div>
 <div class="total grand" id="chk"><span>合計</span><b id="chkv">0</b></div>
 <div class="total"><span>差額 <small id="dnote" style="font-weight:400;font-size:13px"></small></span><b id="diff">0</b></div>
 <div class="card rec">
@@ -104,10 +110,15 @@ function calc(){
   const b=num(document.getElementById("atm").value);
   document.getElementById("grand").textContent=fmt(total+b);
   cur={a:total,b:b,g:total+b};
-  const rEl=document.getElementById("recv"),pEl=document.getElementById("paid"),chk=document.getElementById("chk");
-  const vEl=document.getElementById("prev");
-  const s=num(vEl.value)+num(rEl.value)-num(pEl.value);
-  const empty=vEl.value===""&&rEl.value===""&&pEl.value==="";
+  const g=id=>document.getElementById(id);
+  const chk=g("chk"),vEl=g("prev");
+  const bill=num(g("bill").value);
+  const rv=num(g("arecv").value)+bill+num(g("crecv").value);
+  const pv=num(g("apaid").value)+bill+num(g("cpaid").value);
+  g("recv").textContent=fmt(Math.round(rv*100)/100);
+  g("paid").textContent=fmt(Math.round(pv*100)/100);
+  const s=num(vEl.value)+rv-pv;
+  const empty=["prev","bill","arecv","crecv","apaid","cpaid"].every(id=>g(id).value==="");
   const same=Math.abs(s-(total+b))<0.005;
   document.getElementById("chkv").textContent=fmt(s);
   document.getElementById("diff").textContent=(empty||same)?"0":fmt(Math.round((total+b-s)*100)/100);
@@ -119,11 +130,10 @@ function calc(){
 }
 tbody.addEventListener("input",calc);
 document.getElementById("atm").addEventListener("input",calc);
-document.getElementById("recv").addEventListener("input",calc);
-document.getElementById("paid").addEventListener("input",calc);
+["bill","arecv","crecv","apaid","cpaid"].forEach(id=>document.getElementById(id).addEventListener("input",calc));
 document.getElementById("prev").addEventListener("input",calc);
 function num(v){return parseFloat(String(v).replace(/,/g,""))||0;}
-["atm","prev","recv","paid"].forEach(id=>{
+["atm","prev","bill","arecv","crecv","apaid","cpaid"].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener("input",()=>{
     const raw=el.value.replace(/[^0-9.]/g,"");
@@ -132,7 +142,7 @@ function num(v){return parseFloat(String(v).replace(/,/g,""))||0;}
   });
 });
 var cur={a:0,b:0,g:0};
-document.getElementById("reset").onclick=()=>{tbody.querySelectorAll("input").forEach(i=>i.value="");document.getElementById("atm").value="";document.getElementById("prev").value="";document.getElementById("recv").value="";document.getElementById("paid").value="";calc();};
+document.getElementById("reset").onclick=()=>{tbody.querySelectorAll("input").forEach(i=>i.value="");document.getElementById("atm").value="";document.getElementById("prev").value="";["bill","arecv","crecv","apaid","cpaid"].forEach(id=>document.getElementById(id).value="");calc();};
 calc();
 
 // 透明度（數字越小越透明，背景圖越清楚）
@@ -174,7 +184,7 @@ function renderSrec(){
     let det="";
     if(c){det=DATA.map(([dn],k)=>{const q=Array.isArray(c[k])?c[k]:[0,0,0];const x=N(q[0]),y=N(q[1]),z=N(q[2]);return (x||y||z)?`<div>${fmt(dn)} 元：${x} 捆　${y} 扎　${z} 散</div>`:"";}).join("")||"<div>（沒有填任何面額）</div>";}else det="<div>（沒有面額明細）</div>";
     const df=Math.round((N(r.g)-(N(r.v)+N(r.r)-N(r.p)))*100)/100;const bal=Math.abs(df)<0.005;
-    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} - 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)-N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div></div><b>${fmt(N(r.g))}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
+    d.innerHTML=`<div class="main"><div class="when">${esc(r.t||"")} ▾</div><div class="hint">總金額 ${fmt(N(r.a))} + ATM 庫存 ${fmt(N(r.b))} = 合計 ${fmt(N(r.g))}</div><div class="hint">前日庫存 ${fmt(N(r.v))} + 共收 ${fmt(N(r.r))} - 共付 ${fmt(N(r.p))} = ${fmt(N(r.v)+N(r.r)-N(r.p))}　${bal?"✓ 平衡":"✗ 差額 "+fmt(df)}</div>${r.bl!==undefined?`<div class="hint">共收 = ATM 收 ${fmt(N(r.ar))} + 票據 ${fmt(N(r.bl))} + 櫃檯收 ${fmt(N(r.cr))}</div><div class="hint">共付 = ATM 付 ${fmt(N(r.ap))} + 票據 ${fmt(N(r.bl))} + 櫃檯付 ${fmt(N(r.cp))}</div>`:""}</div><b>${fmt(N(r.g))}</b><button class="x" data-i="${i}">✕</button><div class="detail" hidden>${det}</div>`;
     el.appendChild(d);
   });
 }
@@ -190,9 +200,11 @@ document.getElementById("slist").addEventListener("click",e=>{
 document.getElementById("csave").onclick=()=>{
   const t=new Date().toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
   const c=[...tbody.children].map(tr=>[...tr.querySelectorAll("input")].map(i=>parseFloat(i.value)||0));
-  const rv=num(document.getElementById("recv").value),pv=num(document.getElementById("paid").value),prev=num(document.getElementById("prev").value);
+  const gv=id=>num(document.getElementById(id).value);
+  const bl=gv("bill"),ar=gv("arecv"),cr=gv("crecv"),ap=gv("apaid"),cp=gv("cpaid");
+  const rv=ar+bl+cr,pv=ap+bl+cp,prev=gv("prev");
   const g=cur.g;
-  srec.unshift({t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,c:c});
+  srec.unshift({t:t,v:prev,a:cur.a,b:cur.b,g:g,r:rv,p:pv,bl:bl,ar:ar,cr:cr,ap:ap,cp:cp,c:c});
   saveSrec();renderSrec();
 };
 renderSrec();
