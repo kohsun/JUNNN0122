@@ -31,7 +31,7 @@ button,label.btn{display:inline-block;box-sizing:border-box;padding:10px 14px;bo
 input[type=file]{display:none}
 .atm{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;font-weight:800;font-size:22px}
 .atm input{max-width:190px;font-size:22px;font-weight:800;text-align:right}
-.atm.purple{background:color-mix(in srgb,#dccbff calc(min(100,var(--op) + 35)*1%),transparent);color:#2a1650;border-color:rgba(130,90,200,.55)}
+.atm.blue{background:color-mix(in srgb,#bfe0ff calc(min(100,var(--op) + 35)*1%),transparent);color:#0b2a4a;border-color:rgba(50,120,200,.55)}
 .grand{font-size:20px}
 .atm b{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
 .total.ok{background:color-mix(in srgb,#5fd49a calc(min(100,var(--op) + 35)*1%),transparent);color:#06391f;border-color:rgba(20,130,75,.55)}
@@ -62,14 +62,14 @@ th:nth-child(1){width:18%}th:nth-child(2),th:nth-child(3),th:nth-child(4){width:
 <div class="card atm"><span>總金額</span><b id="total">0</b></div>
 <div class="card atm"><span>ATM 庫存</span><input id="atm" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="total grand" id="gbox"><span>合計</span><b id="grand">0</b></div>
-<div class="card atm purple"><span>前日庫存</span><input id="prev" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
-<div class="card atm"><span>票據</span><input id="bill" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm blue"><span>前日庫存</span><input id="prev" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+<div class="card atm blue"><span>票據</span><input id="bill" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="card atm"><span>ATM 收</span><input id="arecv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="card atm"><span>當日櫃檯收</span><input id="crecv" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
-<div class="card atm purple"><span>共收</span><b id="recv">0</b></div>
+<div class="card atm blue"><span>共收</span><b id="recv">0</b></div>
 <div class="card atm"><span>ATM 付</span><input id="apaid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
 <div class="card atm"><span>當日櫃檯付</span><input id="cpaid" type="text" inputmode="numeric" placeholder="0" autocomplete="off"></div>
-<div class="card atm purple"><span>共付</span><b id="paid">0</b></div>
+<div class="card atm blue"><span>共付</span><b id="paid">0</b></div>
 <div class="total grand" id="chk"><span>合計</span><b id="chkv">0</b></div>
 <div class="total"><span>差額 <small id="dnote" style="font-weight:400;font-size:13px"></small></span><b id="diff">0</b></div>
 <div class="card rec">
